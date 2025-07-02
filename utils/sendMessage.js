@@ -23,7 +23,7 @@ const sendMessage = async ({ phone, name, imageUrl, text }) => {
             {
               "type": "image",
               "image": {
-                "link": "https://52eb-122-178-127-138.ngrok-free.app/images/drsrirampic.jpg"
+                "link": "https://whatsapppromotion.onrender.com/images/drsrirampic.jpg"
               }
             }
           ]
