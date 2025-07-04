@@ -1,4 +1,4 @@
-const recipients = require('./wa_contacts.json');
+const recipients = require('./recipients.json');
 const sendMessage = require('./utils/sendMessage');
 
 const imageUrl = "https://thumbs.dreamstime.com/b/spring-flowers-blue-crocuses-drops-water-backgro-background-tracks-rain-113784722.jpg?w=768";
