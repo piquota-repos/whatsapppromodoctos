@@ -2,7 +2,7 @@ const cron = require('node-cron');
 const sendPromotionalMessages = require('./messageService');
 
 
-cron.schedule('16 22 * * *', async () => {
+cron.schedule('32 22 * * *', async () => {
   console.log("⏰Running scheduled WhatsApp promotional messages...");
   try {
     await sendPromotionalMessages();
