@@ -15,7 +15,7 @@ const sendMessage = async ({ phone, name, imageUrl, text }) => {
     type: 'template',
     "template": {
       "name": "tnoa_secretary_2025",
-      "language": { "code": "en" },
+      "language": { "code": "en_US" },
       "components": [
         {
           "type": "header",
