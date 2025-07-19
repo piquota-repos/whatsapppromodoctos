@@ -5,7 +5,7 @@ const keys = JSON.parse(process.env.CREDENTIALS); // Google Service Account cred
 async function appendToSheet({ name, mobile, message }) {
     console.log("reached");
   const auth = new google.auth.GoogleAuth({
-    keys,
+     credentials: keys,
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
 
