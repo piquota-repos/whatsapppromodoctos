@@ -76,7 +76,8 @@ const sendMessage = async ({ phone, name, imageUrl, text }) => {
       to: phone,
       name,
       timestamp: new Date().toISOString(),
-      message_id: response.data.messages?.[0]?.id || "unknown"
+      message_id: response.data.messages?.[0]?.id || "unknown",
+      message_status: response.data.messages?.[0].message_status
     };
 
     const sentMessages = loadJson(sentLogPath);

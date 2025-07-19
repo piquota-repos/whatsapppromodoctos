@@ -1,6 +1,6 @@
 require('dotenv').config();
 require('./scheduler');
-const { appendToSheet } = require("./writeToSheet");
+const { appendToSheet } = require("./writetosheet");
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -74,7 +74,7 @@ app.get('/webhook', (req, res) => {
 });
 
 // ✅ Webhook event handler
-app.post("/webhook", (req, res) => {
+app.post("/webhook", async (req, res) => {
   const body = req.body;
     await appendToSheet([new Date().toISOString(), JSON.stringify(body)]);
   if (body.object) {
