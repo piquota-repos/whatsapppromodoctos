@@ -76,6 +76,7 @@ app.get('/webhook', (req, res) => {
 // ✅ Webhook event handler
 app.post("/webhook", async (req, res) => {
   const body = req.body;
+   console.log("reached webhook");
     await appendToSheet([new Date().toISOString(), JSON.stringify(body)]);
   if (body.object) {
     body.entry.forEach(entry => {
