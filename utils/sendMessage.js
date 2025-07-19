@@ -46,7 +46,7 @@ const sendMessage = async ({ phone, name, imageUrl, text }) => {
     to: phone,
     type: 'template',
     "template": {
-      "name": "tnoa_general_secretary",
+      "name": "tnoa_atheek_secretary",
       "language": { "code": "en_US" },
       "components": [
         {
@@ -55,7 +55,7 @@ const sendMessage = async ({ phone, name, imageUrl, text }) => {
             {
               "type": "image",
               "image": {
-                "link": "https://whatsapppromotion.onrender.com/images/drAtheek.jpg"
+                "link": "https://whatsapppromotion.onrender.com/images/drAtheekSheik.jpg"
               }
             }
           ]
