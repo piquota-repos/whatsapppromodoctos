@@ -1,6 +1,6 @@
 const { google } = require("googleapis");
 require('dotenv').config();
-const keys = process.env.CREDENTIALS // Google Service Account creds
+const keys = JSON.parse(process.env.CREDENTIALS); // Google Service Account creds
 
 async function appendToSheet({ name, mobile, message }) {
     console.log("reached");
