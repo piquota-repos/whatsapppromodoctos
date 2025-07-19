@@ -1,91 +1,140 @@
 require('dotenv').config();
 require('./scheduler');
+
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
+
 const app = express();
 const VERIFY_TOKEN = "MY_SECRET_TOKEN";
-app.use(express.json()); 
+
+app.use(express.json());
 app.use(express.static("public"));
+
 console.log("📲 WhatsApp Promo Scheduler Running...");
+
+// ✅ Static file serving (e.g., for WhatsApp header images)
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
+
+// ✅ File paths for persistent logs
+const receivedFilePath = path.join(__dirname, 'receivedMessages.json');
+const errorFilePath = path.join(__dirname, 'errorMessages.json');
+
+// ✅ Helper functions
+const loadJson = (filePath) => {
+  try {
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf8');
+      return JSON.parse(data || '[]');
+    }
+  } catch (e) {
+    console.error(`❌ Failed to load ${filePath}:`, e);
+  }
+  return [];
+};
+
+const saveJson = (filePath, data) => {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+  } catch (e) {
+    console.error(`❌ Failed to save to ${filePath}:`, e);
+  }
+};
+
+// ✅ Initialize logs
+if (!fs.existsSync(receivedFilePath)) saveJson(receivedFilePath, []);
+if (!fs.existsSync(errorFilePath)) saveJson(errorFilePath, []);
+
+let receivedMessages = loadJson(receivedFilePath);
+let errorMessages = loadJson(errorFilePath);
+
 // ✅ Root route
 app.get('/', (req, res) => {
   res.send('🚀 WhatsApp Promo Scheduler is live!');
 });
 
-const fs = require('fs');
-
-// Helper function to log delivery status to a file
-const logStatus = (recipientId, messageId, status) => {
-  const logLine = `${new Date().toISOString()} - ${recipientId} - ${messageId} - ${status}\n`;
-  fs.appendFileSync('delivery_log.txt', logLine);
-};
-
+// ✅ Webhook verification
 app.get('/webhook', (req, res) => {
-    const mode = req.query['hub.mode'];
-    const token = req.query['hub.verify_token'];
-    const challenge = req.query['hub.challenge'];
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
 
-    if (mode && token) {
-        if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-            console.log('✅ Webhook verified successfully!');
-            res.status(200).send(challenge);
-        } else {
-            console.warn('❌ Webhook verification failed. Tokens did not match.');
-            res.sendStatus(403);
-        }
+  if (mode && token) {
+    if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+      console.log('✅ Webhook verified successfully!');
+      res.status(200).send(challenge);
     } else {
-        res.status(400).send('Missing mode or token');
+      console.warn('❌ Webhook verification failed.');
+      res.sendStatus(403);
     }
+  } else {
+    res.status(400).send('Missing mode or token');
+  }
 });
 
-// app.post('/webhook', (req, res) => {
-//   const body = req.body;
-
-//   // Log the full body (for testing)
-//   console.log("📬 Webhook received:", JSON.stringify(body, null, 2));
-
-//   // Your custom message status handler here 👇
-//   if (body.entry?.[0]?.changes?.[0]?.value?.statuses) {
-//     const status = body.entry[0].changes[0].value.statuses[0];
-//     console.log("📡 Message status:", status.status, "for:", status.recipient_id);
-
-//     if (status.errors) {
-//       console.log("❌ Error:", JSON.stringify(status.errors, null, 2));
-//     }
-//   }
-
-//   res.sendStatus(200); // Always respond with 200 OK
-// });
-
-app.post('/webhook', (req, res) => {
+// ✅ Webhook event handler
+app.post("/webhook", (req, res) => {
   const body = req.body;
 
-  if (body.entry) {
+  if (body.object) {
     body.entry.forEach(entry => {
       const changes = entry.changes || [];
       changes.forEach(change => {
-        const statuses = change.value?.statuses;
-        if (statuses && statuses.length > 0) {
-          const status = statuses[0];
-          const recipient = status.recipient_id;
-          const messageId = status.id;
-          const statusValue = status.status;
+        const value = change.value;
 
-          // Log to console
-          console.log(`📬 Message to ${recipient} (${messageId}) is now '${statusValue}'`);
+        // 📥 Received user message
+        if (value.messages) {
+          value.messages.forEach(msg => {
+            const log = {
+              from: msg.from,
+              text: msg.text?.body || "",
+              type: msg.type,
+              timestamp: msg.timestamp,
+              id: msg.id
+            };
+            receivedMessages.push(log);
+            saveJson(receivedFilePath, receivedMessages);
+            console.log("📥 Received Message:", log);
+          });
+        }
 
-          // ✅ Log to file
-          logStatus(recipient, messageId, statusValue);
+        // ❌ Delivery failures
+        if (value.statuses) {
+          value.statuses.forEach(status => {
+            if (["failed", "error"].includes(status.status)) {
+              const error = {
+                id: status.id,
+                recipient_id: status.recipient_id,
+                status: status.status,
+                error: status.errors,
+                timestamp: status.timestamp
+              };
+              errorMessages.push(error);
+              saveJson(errorFilePath, errorMessages);
+              console.log("❌ Message Error:", error);
+            }
+          });
         }
       });
     });
-  }
 
-  res.sendStatus(200);
+    res.sendStatus(200);
+  } else {
+    res.sendStatus(404);
+  }
 });
 
+// ✅ View logs via browser
+app.get("/messages", (req, res) => {
+  res.json(receivedMessages);
+});
 
+app.get("/errors", (req, res) => {
+  res.json(errorMessages);
+});
+
+// ✅ Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
 });
