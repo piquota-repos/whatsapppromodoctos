@@ -2,9 +2,8 @@ const { google } = require("googleapis");
 require('dotenv').config();
 const keys = process.env.CREDENTIALS // Google Service Account creds
 
-async function appendToSheet(data) {
+async function appendToSheet({ name, mobile, message }) {
     console.log("reached");
-    console.log(data);
   const auth = new google.auth.GoogleAuth({
     keyFile: keys,
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
@@ -17,7 +16,7 @@ async function appendToSheet(data) {
     range: 'Sheet1!A1',
     valueInputOption: 'USER_ENTERED',
     requestBody: {
-      values: [[data.name, data.mobile, data.message]],
+      values: [[new Date().toISOString(), name, mobile, message]],
     },
   });
 }

@@ -76,8 +76,12 @@ app.get('/webhook', (req, res) => {
 // ✅ Webhook event handler
 app.post("/webhook", async (req, res) => {
   const body = req.body;
-   console.log("reached webhook");
-    await appendToSheet([new Date().toISOString(), JSON.stringify(body)]);
+  console.log("reached webhook");
+  await appendToSheet({
+    name: 'Webhook Event',
+    mobile: body.entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.wa_id || 'Unknown',
+    message: JSON.stringify(body)
+  });
   if (body.object) {
     body.entry.forEach(entry => {
       const changes = entry.changes || [];
@@ -99,29 +103,29 @@ app.post("/webhook", async (req, res) => {
             console.log("📥 Received Message:", log);
           });
         }
-    const entry = req.body.entry?.[0];
-    const changes = entry?.changes?.[0];
+        const entry = req.body.entry?.[0];
+        const changes = entry?.changes?.[0];
 
-    if (changes?.field === 'messages') {
-      const statuses = changes.value?.statuses;
+        if (changes?.field === 'messages') {
+          const statuses = changes.value?.statuses;
 
-      if (statuses && statuses.length > 0) {
-        const statusData = statuses.map(status => ({
-          message_id: status.id,
-          status: status.status,
-          timestamp: new Date(Number(status.timestamp) * 1000).toISOString(),
-          recipient_id: status.recipient_id,
-          conversation: status.conversation,
-          pricing: status.pricing
-        }));
+          if (statuses && statuses.length > 0) {
+            const statusData = statuses.map(status => ({
+              message_id: status.id,
+              status: status.status,
+              timestamp: new Date(Number(status.timestamp) * 1000).toISOString(),
+              recipient_id: status.recipient_id,
+              conversation: status.conversation,
+              pricing: status.pricing
+            }));
 
-        const currentLog = loadJson(statusLogPath);
-        const updatedLog = currentLog.concat(statusData);
-        saveJson(statusLogPath, updatedLog);
+            const currentLog = loadJson(statusLogPath);
+            const updatedLog = currentLog.concat(statusData);
+            saveJson(statusLogPath, updatedLog);
 
-        console.log(`📩 Status update received:`, statusData);
-      }
-    }
+            console.log(`📩 Status update received:`, statusData);
+          }
+        }
         // ❌ Delivery failures
         if (value.statuses) {
           value.statuses.forEach(status => {
