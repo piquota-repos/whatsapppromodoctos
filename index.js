@@ -19,7 +19,7 @@ app.use('/images', express.static(path.join(__dirname, 'public/images')));
 // ✅ File paths for persistent logs
 const receivedFilePath = path.join(__dirname, 'receivedMessages.json');
 const errorFilePath = path.join(__dirname, 'errorMessages.json');
-
+const statusLogPath = path.join(__dirname, 'messageStatus.json');
 // ✅ Helper functions
 const loadJson = (filePath) => {
   try {
@@ -44,6 +44,7 @@ const saveJson = (filePath, data) => {
 // ✅ Initialize logs
 if (!fs.existsSync(receivedFilePath)) saveJson(receivedFilePath, []);
 if (!fs.existsSync(errorFilePath)) saveJson(errorFilePath, []);
+if (!fs.existsSync(statusLogPath)) saveJson(statusLogPath, []);
 
 let receivedMessages = loadJson(receivedFilePath);
 let errorMessages = loadJson(errorFilePath);
@@ -97,7 +98,29 @@ app.post("/webhook", (req, res) => {
             console.log("📥 Received Message:", log);
           });
         }
+    const entry = req.body.entry?.[0];
+    const changes = entry?.changes?.[0];
 
+    if (changes?.field === 'messages') {
+      const statuses = changes.value?.statuses;
+
+      if (statuses && statuses.length > 0) {
+        const statusData = statuses.map(status => ({
+          message_id: status.id,
+          status: status.status,
+          timestamp: new Date(Number(status.timestamp) * 1000).toISOString(),
+          recipient_id: status.recipient_id,
+          conversation: status.conversation,
+          pricing: status.pricing
+        }));
+
+        const currentLog = loadJson(statusLogPath);
+        const updatedLog = currentLog.concat(statusData);
+        saveJson(statusLogPath, updatedLog);
+
+        console.log(`📩 Status update received:`, statusData);
+      }
+    }
         // ❌ Delivery failures
         if (value.statuses) {
           value.statuses.forEach(status => {
