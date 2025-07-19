@@ -5,14 +5,17 @@ const imageUrl = "https://thumbs.dreamstime.com/b/spring-flowers-blue-crocuses-d
 const messageText = "Hello {name}, don't miss out! 🗳️ Vote for our candidate and support change. Visit our center or call us!";
 
 const sendPromotionalMessages = async () => {
+ for (const user of users){
   for (const recipient of recipients) {
     await sendMessage({
       phone: recipient.phone,
       name: recipient.name,
       imageUrl,
-      text: messageText
+      text: messageText,
+      user: user
     });
   }
+}
 };
 
 module.exports = sendPromotionalMessages;
