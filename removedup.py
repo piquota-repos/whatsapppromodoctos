@@ -16,9 +16,11 @@ def clean_mobile(mobile):
 
 df['CleanedMobile'] = df['Mobile'].apply(clean_mobile)
 
-# Split valid and invalid rows
-valid_df = df[df['CleanedMobile'].notnull()].drop_duplicates(subset=["CleanedMobile"])
-invalid_df = df[df['CleanedMobile'].isnull()]
+# Remove rows where CleanedMobile is null
+df = df[df['CleanedMobile'].notnull()]
+
+# Remove duplicates: keep the first occurrence of each CleanedMobile
+df = df.drop_duplicates(subset=["CleanedMobile"])
 
 # ✅ Prepare valid contact list
 contacts = [
@@ -26,15 +28,21 @@ contacts = [
         "phone": f"91{row['CleanedMobile']}",
         "name": row['Name'].strip()
     }
-    for _, row in valid_df.iterrows()
+    for _, row in df.iterrows()
 ]
 
 # Save valid contacts
-with open("wa_contacts.json", "w") as f:
+with open("unique_contacts.json", "w") as f:
     json.dump(contacts, f, indent=2)
 print(f"✅ Saved {len(contacts)} valid contacts to wa_contacts.json")
 
-# ❌ Save invalid data (optional fields: name, original mobile)
+# ❌ Collect invalid rows (those we couldn't clean mobile for)
+# Reload and compare to get invalids
+df_original = pd.read_excel("WA Data.xlsx", sheet_name="Sheet1", dtype={"Mobile": str})
+df_original['CleanedMobile'] = df_original['Mobile'].apply(clean_mobile)
+invalid_df = df_original[df_original['CleanedMobile'].isnull()]
+invalid_df = invalid_df.dropna(subset=["Name", "Mobile"])
+
 invalid_entries = [
     {
         "name": row['Name'].strip(),
